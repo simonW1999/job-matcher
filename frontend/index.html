@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Matcher — Encontrá tu empleo ideal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafaf8;
+      --surface: #ffffff;
+      --surface2: #f3f2ef;
+      --border: #e2e0d8;
+      --border-strong: #c8c6be;
+      --text: #1a1a18;
+      --text-muted: #6b6a65;
+      --text-faint: #9e9d98;
+      --accent: #1a1a18;
+      --green: #1D9E75;
+      --amber: #BA7517;
+      --red: #A32D2D;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* Header */
+    .header { margin-bottom: 3rem; }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 0.75rem;
+    }
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 400;
+      line-height: 1.15;
+      margin-bottom: 0.6rem;
+    }
+    .header p { font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Sección */
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 0.5rem;
+    }
+
+    /* CV input */
+    .cv-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      resize: vertical;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--border-strong); }
+    textarea.error { border-color: var(--red); }
+    textarea::placeholder { color: var(--text-faint); }
+
+    /* Filtros */
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .filter {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.1rem;
+    }
+
+    .filter label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 5px;
+    }
+
+    select {
+      width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Botón */
+    .btn-main {
+      width: 100%;
+      padding: 1rem;
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--bg);
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-bottom: 2rem;
+    }
+    .btn-main:hover:not(:disabled) { opacity: 0.88; }
+    .btn-main:active:not(:disabled) { transform: scale(0.99); }
+    .btn-main:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Loading */
+    .loading { display: none; margin-bottom: 1.5rem; }
+    .loading.visible { display: block; }
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .progress-track {
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    /* Error banner */
+    .error-banner {
+      display: none;
+      background: #fcebeb;
+      border: 1px solid #f09595;
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+    }
+    .error-banner.visible { display: block; }
+
+    /* Perfil detectado */
+    .profile-card {
+      display: none;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    .profile-card.visible { display: block; }
+    .profile-card .summary {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      line-height: 1.55;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 12px;
+      padding: 3px 11px;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    /* Resultados */
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .results-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .results-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+    }
+    .results-count { font-size: 13px; color: var(--text-faint); }
+
+    /* Job card */
+    .job-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .job-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+
+    .job-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .job-title { font-size: 15px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
+    .job-company { font-size: 13px; color: var(--text-muted); }
+
+    .score-block { flex-shrink: 0; text-align: center; }
+    .score-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1;
+    }
+    .score-number.high { color: var(--green); }
+    .score-number.mid  { color: var(--amber); }
+    .score-number.low  { color: var(--text-faint); }
+    .score-label { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint); }
+
+    .job-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.85rem; }
+    .pill {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .job-reason {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      padding-top: 0.8rem;
+    }
+
+    .job-link {
+      display: inline-block;
+      margin-top: 0.6rem;
+      font-size: 12.5px;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border-strong);
+      padding-bottom: 1px;
+      transition: border-color 0.15s;
+    }
+    .job-link:hover { border-color: var(--text); }
+
+    /* Empty */
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-faint);
+      font-size: 14px;
+    }
+    .empty.visible { display: block; }
+
+    @media (max-width: 480px) {
+      .filters { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <p class="eyebrow">Job Matcher — Beta</p>
+    <h1>Encontrá los empleos<br>que realmente te encajan</h1>
+    <p>Pegá tu CV, analizamos tu perfil y buscamos los mejores matches en Computrabajo, Indeed y más.</p>
+  </div>
+
+  <p class="section-label">Tu CV</p>
+  <div class="cv-box">
+    <textarea id="cv-input" placeholder="Pegá el texto de tu CV acá — experiencia, habilidades, educación, formación..."></textarea>
+  </div>
+
+  <div class="filters">
+    <div class="filter">
+      <label>Área</label>
+      <select id="area-filter">
+        <option value="">Todas las áreas</option>
+        <option value="research">Investigación social / UX</option>
+        <option value="data">Datos y analytics</option>
+        <option value="marketing">Marketing</option>
+        <option value="rrhh">RRHH y organizacional</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label>Modalidad</label>
+      <select id="mode-filter">
+        <option value="">Cualquiera</option>
+        <option value="remoto">Remoto</option>
+        <option value="hibrido">Híbrido</option>
+        <option value="presencial">Presencial</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-main" id="btn" onclick="runAnalysis()">Analizar mi perfil y buscar matches →</button>
+
+  <div class="loading" id="loading">
+    <div class="loading-text" id="loading-text">Analizando tu CV...</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="profile-card" id="profile-card">
+    <p class="summary" id="profile-summary"></p>
+    <div class="tags" id="profile-tags"></div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <h2>Matches encontrados</h2>
+      <span class="results-count" id="results-count"></span>
+    </div>
+    <div id="results-list"></div>
+  </div>
+
+  <div class="empty" id="empty">
+    No encontramos resultados con esos filtros. Probá cambiando el área o la modalidad.
+  </div>
+
+</div>
+
+<script>
+  const BACKEND = "http://localhost:8000";
+
+  function scoreClass(s) {
+    if (s >= 75) return "high";
+    if (s >= 55) return "mid";
+    return "low";
+  }
+
+  async function setProgress(pct, text) {
+    document.getElementById("progress-fill").style.width = pct + "%";
+    document.getElementById("loading-text").textContent = text;
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("error-banner");
+    el.textContent = msg;
+    el.classList.add("visible");
+  }
+
+  function clearError() {
+    document.getElementById("error-banner").classList.remove("visible");
+  }
+
+  async function runAnalysis() {
+    const cvText = document.getElementById("cv-input").value.trim();
+    const textarea = document.getElementById("cv-input");
+
+    clearError();
+    textarea.classList.remove("error");
+
+    if (cvText.length < 50) {
+      textarea.classList.add("error");
+      showError("Por favor pegá el texto completo de tu CV antes de continuar.");
+      return;
+    }
+
+    const btn = document.getElementById("btn");
+    btn.disabled = true;
+    document.getElementById("profile-card").classList.remove("visible");
+    document.getElementById("results").classList.remove("visible");
+    document.getElementById("empty").classList.remove("visible");
+
+    const loading = document.getElementById("loading");
+    loading.classList.add("visible");
+
+    await setProgress(10, "Analizando tu CV con IA...");
+    await setProgress(30, "Extrayendo habilidades y experiencia...");
+    await setProgress(55, "Buscando ofertas en Computrabajo, Indeed y más...");
+
+    try {
+      const res = await fetch(`${BACKEND}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cv_text: cvText })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Error del servidor.");
+      }
+
+      await setProgress(85, "Calculando compatibilidad de cada oferta...");
+      const data = await res.json();
+      await setProgress(100, "¡Listo!");
+      await new Promise(r => setTimeout(r, 300));
+
+      loading.classList.remove("visible");
+      renderProfile(data.profile);
+      renderJobs(data.jobs);
+
+    } catch (err) {
+      loading.classList.remove("visible");
+      showError("No se pudo conectar con el servidor. Asegurate de que el backend esté corriendo en localhost:8000.");
+      console.error(err);
+    }
+
+    btn.disabled = false;
+  }
+
+  function renderProfile(profile) {
+    const card = document.getElementById("profile-card");
+    document.getElementById("profile-summary").textContent = profile.summary || "";
+    document.getElementById("profile-tags").innerHTML =
+      (profile.profile_tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+    card.classList.add("visible");
+  }
+
+  function renderJobs(jobs) {
+    const list = document.getElementById("results-list");
+    const section = document.getElementById("results");
+    const empty = document.getElementById("empty");
+    const count = document.getElementById("results-count");
+
+    if (!jobs || jobs.length === 0) {
+      section.classList.remove("visible");
+      empty.classList.add("visible");
+      return;
+    }
+
+    count.textContent = `${jobs.length} resultado${jobs.length !== 1 ? "s" : ""}`;
+
+    list.innerHTML = jobs.map(job => `
+      <div class="job-card">
+        <div class="job-top">
+          <div>
+            <div class="job-title">${job.title}</div>
+            <div class="job-company">${job.company}</div>
+          </div>
+          <div class="score-block">
+            <div class="score-number ${scoreClass(job.score)}">${job.score}%</div>
+            <div class="score-label">match</div>
+          </div>
+        </div>
+        <div class="job-pills">
+          <span class="pill">${job.source}</span>
+          <span class="pill">${job.location || "Argentina"}</span>
+          <span class="pill">${job.mode || "No especificado"}</span>
+        </div>
+        <div class="job-reason">
+          ${job.reason}
+          ${job.url && job.url !== "#" ? `<br><a class="job-link" href="${job.url}" target="_blank">Ver oferta →</a>` : ""}
+        </div>
+      </div>
+    `).join("");
+
+    empty.classList.remove("visible");
+    section.classList.add("visible");
+  }
+</script>
+</body>
+</html>
